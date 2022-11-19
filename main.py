@@ -1,10 +1,13 @@
 import sys
+import cv2
+import numpy as np
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel
 from PyQt5.QtGui import QPainter, QPen, QImage, QPixmap
-from PyQt5.QtCore import Qt, QPoint
 from IpToolbar import IpToolbar
 from IpShape import *
 from enum import Enum
+from utils import *
+from IpImageProcess import *
 
 class DrawingState(Enum):
     IDLE = 1
@@ -17,9 +20,12 @@ class MyApp(QMainWindow):
 
         self.img = None
         self.path_img = None
+
         self.cur_shape = None
         self.shape_list = []
         self.state = DrawingState.IDLE
+
+        self.ip = IpImageProcess(self)
 
         self.init_ui()
 
@@ -28,8 +34,7 @@ class MyApp(QMainWindow):
         self.toolbar = IpToolbar(self)
         self.addToolBar(self.toolbar)
 
-
-        self.statusBar()
+        # self.statusBar()
 
         self.setWindowTitle('Image processing')
         self.showMaximized()
@@ -77,7 +82,12 @@ class MyApp(QMainWindow):
 
     def open_image(self, path):
         self.path_img = path
-        self.img = QPixmap(self.path_img)
+        self.img = QPixmap(self.path_img).toImage()
+
+        self.img = self.img.convertToFormat(QImage.Format.Format_Grayscale8)
+        self.img = QPixmap.fromImage(self.img)
+        self.img_orig = self.img.copy()
+
         self.resize(self.img.width(), self.img.height())
         self.update()
 

@@ -1,6 +1,28 @@
-from PyQt5.QtWidgets import QToolBar, QAction, QFileDialog
+from PyQt5.QtWidgets import QToolBar, QAction, QFileDialog, QWidget, QSlider, QLabel, QDesktopWidget, QMainWindow, QVBoxLayout, QMessageBox
 from PyQt5.QtGui import QIcon
+from PyQt5.QtCore import Qt
 from IpShape import *
+
+class ThresholdWindow(QMainWindow):
+    def __init__(self, *args, **kwargs):
+        super(ThresholdWindow, self).__init__(*args, **kwargs)
+
+        self.parent = args[0]
+
+        self.init()
+
+    def init(self):
+        slider = QSlider(Qt.Horizontal, self)
+        slider.setRange(0, 255)
+        slider.setSingleStep(1)
+        slider.setValue(0)
+
+        slider.valueChanged.connect(self.on_value_changed)
+
+        self.setWindowTitle('Threshold:')
+
+    def on_value_changed(self, e):
+        self.parent.ip.set_threshold(e)
 
 class IpToolbar(QToolBar):
     def __init__(self, *args, **kwargs):
@@ -23,17 +45,36 @@ class IpToolbar(QToolBar):
         rect_action.setShortcut('Ctrl+R')
         rect_action.triggered.connect(lambda : self.parent.set_shape(IpRectangle()))
 
-        el_action = QAction('Ellipse', self)
+        el_action = QAction('Ell', self)
         el_action.setShortcut('Ctrl+E')
         el_action.triggered.connect(lambda : self.parent.set_shape(IpEllipse()))
 
+        clear_action = QAction('Rest', self)
+        clear_action.setShortcut('Ctrl+C')
+        clear_action.triggered.connect(self.parent.ip.clear)
+
+        th_action = QAction('Thsh', self)
+        th_action.setShortcut('Ctrl+T')
+        th_action.triggered.connect(lambda :self.show_slider(th_action))
+
+
         self.addAction(open_action)
         self.addAction(save_action)
+        self.addSeparator()
+
         self.addAction(rect_action)
         self.addAction(el_action)
+        self.addSeparator()
 
-    def set_cur_shape(self, shape):
-        print(shape)
+        self.addAction(clear_action)
+        self.addAction(th_action)
+
+    def show_slider(self, act):
+        if self.parent.img is not None:
+            window = ThresholdWindow(self.parent)
+            window.show()
+        else:
+            QMessageBox.about(self.parent, 'Info', 'load image first')
 
     def open_file(self, e):
         fname = QFileDialog.getOpenFileName(self, 'Open File', './')
