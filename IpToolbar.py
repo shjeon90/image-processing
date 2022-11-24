@@ -55,8 +55,11 @@ class IpToolbar(QToolBar):
 
         th_action = QAction('Thsh', self)
         th_action.setShortcut('Ctrl+T')
-        th_action.triggered.connect(lambda :self.show_slider(th_action))
+        th_action.triggered.connect(lambda :self.show_threshold_slide(th_action))
 
+        hist_action = QAction('Hist', self)
+        hist_action.setShortcut('Ctrl+H')
+        hist_action.triggered.connect(self.parent.ip.set_hist)
 
         self.addAction(open_action)
         self.addAction(save_action)
@@ -68,8 +71,9 @@ class IpToolbar(QToolBar):
 
         self.addAction(clear_action)
         self.addAction(th_action)
+        self.addAction(hist_action)
 
-    def show_slider(self, act):
+    def show_threshold_slide(self, act):
         if self.parent.img is not None:
             window = ThresholdWindow(self.parent)
             window.show()
