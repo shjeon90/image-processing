@@ -1,38 +1,19 @@
 from PyQt5.QtWidgets import QToolBar, QAction, QFileDialog, QWidget, QSlider, QLabel, QDesktopWidget, QMainWindow, QVBoxLayout, QMessageBox
 from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import Qt
 from IpShape import *
-
-class ThresholdWindow(QMainWindow):
-    def __init__(self, *args, **kwargs):
-        super(ThresholdWindow, self).__init__(*args, **kwargs)
-
-        self.parent = args[0]
-
-        self.init()
-
-    def init(self):
-        slider = QSlider(Qt.Horizontal, self)
-        slider.setRange(0, 255)
-        slider.setSingleStep(1)
-        slider.setValue(0)
-
-        slider.valueChanged.connect(self.on_value_changed)
-
-        self.setWindowTitle('Threshold:')
-
-    def on_value_changed(self, e):
-        self.parent.ip.set_threshold(e)
+from IpSlider import *
 
 class IpToolbar(QToolBar):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parent, imagePanel, *args, **kwargs):
         super(IpToolbar, self).__init__(*args, **kwargs)
 
-        self.parent = args[0]
+        self.parent = parent
+        self.imagePanel = imagePanel
 
         self.init_toolbar()
 
     def init_toolbar(self):
+
         open_action = QAction(QIcon('./icons/topen.png'), 'Open', self)
         open_action.setShortcut('Ctrl+O')
         open_action.triggered.connect(self.open_file)
@@ -43,15 +24,15 @@ class IpToolbar(QToolBar):
 
         rect_action = QAction('Rect', self)
         rect_action.setShortcut('Ctrl+R')
-        rect_action.triggered.connect(lambda : self.parent.set_shape(IpRectangle()))
+        rect_action.triggered.connect(lambda : self.imagePanel.set_shape(IpRectangle()))
 
         el_action = QAction('Ell', self)
         el_action.setShortcut('Ctrl+E')
-        el_action.triggered.connect(lambda : self.parent.set_shape(IpEllipse()))
+        el_action.triggered.connect(lambda : self.imagePanel.set_shape(IpEllipse()))
 
         clear_action = QAction('Rest', self)
         clear_action.setShortcut('Ctrl+C')
-        clear_action.triggered.connect(self.parent.ip.clear)
+        clear_action.triggered.connect(self.imagePanel.ip.clear)
 
         th_action = QAction('Thsh', self)
         th_action.setShortcut('Ctrl+T')
@@ -59,7 +40,25 @@ class IpToolbar(QToolBar):
 
         hist_action = QAction('Hist', self)
         hist_action.setShortcut('Ctrl+H')
-        hist_action.triggered.connect(self.parent.ip.set_hist)
+        hist_action.triggered.connect(self.imagePanel.ip.set_hist)
+
+        gf_action = QAction('GF', self)
+        gf_action.setShortcut('Ctrl+G')
+        gf_action.triggered.connect(self.imagePanel.ip.set_gaussian_filter)
+
+        bif_action = QAction('BiF', self)
+        bif_action.setShortcut('Ctrl+B')
+        bif_action.triggered.connect(self.imagePanel.ip.set_bilateral_filter)
+
+        lf_action = QAction('Lap', self)
+        lf_action.setShortcut('Ctrl+L')
+        lf_action.triggered.connect(self.imagePanel.ip.set_laplacian_filter)
+
+        scale_action = QAction('Scale', self)
+        scale_action.triggered.connect(lambda : self.show_scale_slide(scale_action))
+
+        rotate_action = QAction('Rotate', self)
+        rotate_action.triggered.connect(lambda :self.show_rotate_dial(rotate_action))
 
         self.addAction(open_action)
         self.addAction(save_action)
@@ -72,10 +71,33 @@ class IpToolbar(QToolBar):
         self.addAction(clear_action)
         self.addAction(th_action)
         self.addAction(hist_action)
+        self.addSeparator()
+
+        self.addAction(gf_action)
+        self.addAction(bif_action)
+        self.addAction(lf_action)
+        self.addSeparator()
+
+        self.addAction(scale_action)
+        self.addAction(rotate_action)
 
     def show_threshold_slide(self, act):
-        if self.parent.img is not None:
-            window = ThresholdWindow(self.parent)
+        if self.imagePanel.img is not None:
+            window = ThresholdWindow(self.parent, self.imagePanel)
+            window.show()
+        else:
+            QMessageBox.about(self.parent, 'Info', 'load image first')
+
+    def show_scale_slide(self, act):
+        if self.imagePanel.img is not None:
+            window = ScaleWindow(self.parent, self.imagePanel)
+            window.show()
+        else:
+            QMessageBox.about(self.parent, 'Info', 'load image first')
+
+    def show_rotate_dial(self, act):
+        if self.imagePanel.img is not None:
+            window = RotateWindow(self.parent, self.imagePanel)
             window.show()
         else:
             QMessageBox.about(self.parent, 'Info', 'load image first')
@@ -84,7 +106,7 @@ class IpToolbar(QToolBar):
         fname = QFileDialog.getOpenFileName(self, 'Open File', './')
 
         if fname[0]:
-            self.parent.open_image(fname[0])
+            self.imagePanel.open_image(fname[0])
 
     def save_file(self, e):
         pass
