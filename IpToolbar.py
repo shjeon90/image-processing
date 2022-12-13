@@ -60,6 +60,12 @@ class IpToolbar(QToolBar):
         rotate_action = QAction('Rotate', self)
         rotate_action.triggered.connect(lambda :self.show_rotate_dial(rotate_action))
 
+        reflect_action = QAction('Reflect', self)
+        reflect_action.triggered.connect(self.imagePanel.ip.reflect_image)
+
+        perspective_action = QAction('Pers', self)
+        perspective_action.triggered.connect(self.imagePanel.set_perspective)
+
         self.addAction(open_action)
         self.addAction(save_action)
         self.addSeparator()
@@ -80,6 +86,8 @@ class IpToolbar(QToolBar):
 
         self.addAction(scale_action)
         self.addAction(rotate_action)
+        self.addAction(reflect_action)
+        self.addAction(perspective_action)
 
     def show_threshold_slide(self, act):
         if self.imagePanel.img is not None:

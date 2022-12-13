@@ -61,4 +61,4 @@ class RotateWindow(QMainWindow):
         dial.valueChanged.connect(self.on_value_changed)
 
     def on_value_changed(self, e):
-        self.imagePanel.ip.roate_image(e)
+        self.imagePanel.ip.rotate_image(e)

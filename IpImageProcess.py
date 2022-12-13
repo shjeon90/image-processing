@@ -82,17 +82,45 @@ class IpImageProcess:
 
         self.do_postprocess(img_sc, alpha)
 
-    def roate_image(self, r):
-        theta = r * np.pi / 180.
+    def rotate_image(self, r):
         img_gray, alpha = self.get_gray_alpha()
         rows, cols = img_gray.shape[:2]
 
-        # T = np.array([
-        #     [np.cos(theta), -np.sin(theta), rows // 2],
-        #     [np.sin(theta), np.cos(theta), -cols // 2]
-        # ])
-        # img_rot = cv2.warpAffine(img_gray, T, (cols, rows))
         T = cv2.getRotationMatrix2D((cols // 2, rows // 2), -r, 1.0)
         img_rot = cv2.warpAffine(img_gray, T, (cols, rows))
 
         self.do_postprocess(img_rot, alpha)
+
+    def reflect_image(self):
+        img_gray, alpha = self.get_gray_alpha()
+        rows, cols = img_gray.shape[:2]
+
+        T = np.array([
+            [-1., 0., cols-1],
+            [0., 1., 0.]
+        ])
+
+        img_ref = cv2.warpAffine(img_gray, T, (cols, rows))
+
+        self.do_postprocess(img_ref, alpha)
+
+    def perspective_transformation(self, perspective_pts):
+        pts1 = np.array(perspective_pts).astype(np.float32)
+        w1 = np.abs(pts1[1, 0] - pts1[0, 0])
+        w2 = np.abs(pts1[2, 0] - pts1[3, 0])
+        h1 = np.abs(pts1[2, 1] - pts1[0, 1])
+        h2 = np.abs(pts1[3, 1] - pts1[1, 1])
+
+        width = int(np.max([w1, w2]))
+        height = int(np.max([h1, h2]))
+
+        pts2 = np.array([
+            [0., 0.], [width - 1, 0.],
+            [0., height - 1], [width - 1, height - 1]
+        ]).astype(np.float32)
+
+        img_gray, alpha = self.get_gray_alpha()
+
+        T = cv2.getPerspectiveTransform(pts1, pts2)
+        img_per = cv2.warpPerspective(img_gray, T, (width, height))
+        cv2.imshow('perspective', img_per)
