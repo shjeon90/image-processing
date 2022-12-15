@@ -1,3 +1,4 @@
+import cv2
 from PyQt5.QtWidgets import QToolBar, QAction, QFileDialog, QWidget, QSlider, QLabel, QDesktopWidget, QMainWindow, QVBoxLayout, QMessageBox
 from PyQt5.QtGui import QIcon
 from IpShape import *
@@ -66,6 +67,21 @@ class IpToolbar(QToolBar):
         perspective_action = QAction('Pers', self)
         perspective_action.triggered.connect(self.imagePanel.set_perspective)
 
+        harris_action = QAction('Harris', self)
+        harris_action.triggered.connect(self.imagePanel.ip.harris_corner_detect)
+
+        fast_action = QAction('FAST', self)
+        fast_action.triggered.connect(self.imagePanel.ip.fast_feature_detect)
+
+        blob_action = QAction('BLOB', self)
+        blob_action.triggered.connect(self.imagePanel.ip.blob_detect)
+
+        orb_action = QAction('ORB', self)
+        orb_action.triggered.connect(self.imagePanel.ip.orb_descriptor)
+
+        featmat_action = QAction('FeatMat', self)
+        featmat_action.triggered.connect(self.open_template_file)
+
         self.addAction(open_action)
         self.addAction(save_action)
         self.addSeparator()
@@ -88,6 +104,13 @@ class IpToolbar(QToolBar):
         self.addAction(rotate_action)
         self.addAction(reflect_action)
         self.addAction(perspective_action)
+        self.addSeparator()
+
+        self.addAction(harris_action)
+        self.addAction(fast_action)
+        self.addAction(blob_action)
+        self.addAction(orb_action)
+        self.addAction(featmat_action)
 
     def show_threshold_slide(self, act):
         if self.imagePanel.img is not None:
@@ -115,6 +138,15 @@ class IpToolbar(QToolBar):
 
         if fname[0]:
             self.imagePanel.open_image(fname[0])
+
+    def open_template_file(self):
+        if self.imagePanel.img is not None:
+            fname = QFileDialog.getOpenFileName(self, 'Open Template File', './')
+            if fname[0]:
+                img_temp = cv2.imread(fname[0], cv2.IMREAD_GRAYSCALE)
+                self.imagePanel.ip.feature_match(img_temp)
+        else:
+            QMessageBox.about(self.parent, 'Info', 'load image first')
 
     def save_file(self, e):
         pass

@@ -1,13 +1,16 @@
 import cv2
 import qimage2ndarray
 from utils import *
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QPoint
+from PyQt5.QtGui import QPixmap, QPainter
+from IpShape import *
 
 class IpImageProcess:
     def __init__(self, *args, **kwargs):
         self.parent = args[0]
 
     def clear(self):
+        self.parent.clear()
         self.parent.img = self.parent.img_orig.copy()
         self.parent.update()
 
@@ -31,6 +34,15 @@ class IpImageProcess:
         ), -1)
 
         self.parent.img = QPixmap.fromImage(qimage2ndarray.array2qimage(img_rgba, normalize=False))
+        self.parent.update()
+
+    def do_postprocess_mark(self, coords):
+        for coord in coords:
+            ellipse = IpEllipse()
+            ellipse.init(QPoint(coord[0]-5, coord[1]-5))
+            ellipse.update(QPoint(coord[0]+5, coord[1]+5))
+
+            self.parent.shape_list.append(ellipse)
         self.parent.update()
 
     def set_threshold(self, thr):
@@ -124,3 +136,71 @@ class IpImageProcess:
         T = cv2.getPerspectiveTransform(pts1, pts2)
         img_per = cv2.warpPerspective(img_gray, T, (width, height))
         cv2.imshow('perspective', img_per)
+
+    def harris_corner_detect(self):
+        img_gray, alpha = self.get_gray_alpha()
+
+        corners = cv2.cornerHarris(img_gray, 2, ksize=7, k=0.04)    # ksize gets bigger when the image is big.
+        coords = np.where(corners > 0.1 * corners.max())
+        coords = np.stack((coords[1], coords[0]), -1).astype(np.int32)
+
+        self.do_postprocess_mark(coords)
+
+    def fast_feature_detect(self):
+        img_gray, alpha = self.get_gray_alpha()
+
+        fast = cv2.FastFeatureDetector_create(50)   # threshold
+        keypoints = fast.detect(img_gray, None)
+        if len(keypoints) > 0:
+            coords = np.stack([kp.pt for kp in keypoints], 0).astype(np.int32)
+
+            self.do_postprocess_mark(coords)
+
+    def blob_detect(self):
+        img_gray, alpha = self.get_gray_alpha()
+
+        # when we need to set parameters
+        # https://blog.knowblesse.com/34
+        blob = cv2.SimpleBlobDetector_create()
+        keypoints = blob.detect(img_gray)
+        if len(keypoints) > 0:
+            coords = np.stack([kp.pt for kp in keypoints], 0).astype(np.int32)
+
+            self.do_postprocess_mark(coords)
+
+    def orb_descriptor(self):
+        img_gray, alpha = self.get_gray_alpha()
+
+        orb = cv2.ORB_create()
+        keypoints, descriptors = orb.detectAndCompute(img_gray, None)
+        if len(keypoints) > 0:
+            coords = np.stack([kp.pt for kp in keypoints], 0).astype(np.int32)
+
+            self.do_postprocess_mark(coords)
+
+    def feature_match(self, img_temp):
+        img_gray, alpha = self.get_gray_alpha()
+
+        detector = cv2.ORB_create()
+        kp1, desc1 = detector.detectAndCompute(img_temp, None)
+        kp2, desc2 = detector.detectAndCompute(img_gray, None)
+
+        if len(kp1) > 0 and len(kp2) > 0:
+
+            matcher = cv2.BFMatcher(cv2.NORM_HAMMING2)
+            matches = matcher.knnMatch(desc1, desc2, 2)
+
+            ratio = 0.75
+            good_matches = [first for first, second in matches if first.distance < second.distance * ratio]
+
+            src_pts = np.array([kp1[m.queryIdx].pt for m in good_matches]).astype(np.float32)
+            dst_pts = np.array([kp2[m.trainIdx].pt for m in good_matches]).astype(np.float32)
+            T, mask = cv2.findHomography(src_pts, dst_pts)
+            h, w = img_temp.shape[:2]
+            pts = np.float32([[[0, 0]], [[0, h - 1]], [[w - 1, h - 1]], [[w - 1, 0]]])
+            dst = cv2.perspectiveTransform(pts, T)
+            img_gray = cv2.polylines(img_gray, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
+            res = cv2.drawMatches(img_temp, kp1, img_gray, kp2, good_matches, None,
+                                       flags=cv2.DRAW_MATCHES_FLAGS_NOT_DRAW_SINGLE_POINTS)
+
+            cv2.imshow('Feature Match + Homography', res)

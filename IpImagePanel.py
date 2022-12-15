@@ -1,4 +1,3 @@
-import matplotlib.pyplot as plt
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QPainter, QImage
 from PyQt5.QtCore import QPoint
@@ -25,6 +24,12 @@ class IpImagePanel(QWidget):
 
         self.img = None
         self.ip = IpImageProcess(self)
+
+    def clear(self):
+        self.state = DrawingState.IDLE
+        self.cur_shape = None
+        self.shape_list.clear()
+        self.perspective_pts.clear()
 
     def set_shape(self, shape):
         self.cur_shape = shape
