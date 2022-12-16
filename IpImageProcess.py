@@ -140,7 +140,7 @@ class IpImageProcess:
     def harris_corner_detect(self):
         img_gray, alpha = self.get_gray_alpha()
 
-        corners = cv2.cornerHarris(img_gray, 2, ksize=7, k=0.04)    # ksize gets bigger when the image is big.
+        corners = cv2.cornerHarris(img_gray, 2, ksize=3, k=0.04)    # ksize gets bigger when the image is big.
         coords = np.where(corners > 0.1 * corners.max())
         coords = np.stack((coords[1], coords[0]), -1).astype(np.int32)
 

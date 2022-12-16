@@ -4,6 +4,7 @@ import numpy as np
 from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QLabel
 from PyQt5.QtGui import QPainter, QPen, QImage, QPixmap
 from IpToolbar import IpToolbar
+from IpMenubar import IpMenubar
 from IpImagePanel import *
 
 class MyApp(QMainWindow):
@@ -17,6 +18,9 @@ class MyApp(QMainWindow):
 
     def init_ui(self):
         self.imagePanel = IpImagePanel(self)
+
+        self.menubar = IpMenubar(self, self.imagePanel)
+        self.setMenuBar(self.menubar)
 
         self.toolbar = IpToolbar(self, self.imagePanel)
         self.addToolBar(self.toolbar)
