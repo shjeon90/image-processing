@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 from PyQt5.QtWidgets import QMenuBar, QAction, QFileDialog, QMessageBox
 from PyQt5.QtGui import QIcon
 from IpSlider import *
@@ -126,7 +127,9 @@ class IpMenubar(QMenuBar):
         if self.imagePanel.img is not None:
             fname = QFileDialog.getOpenFileName(self, 'Open Template File', './')
             if fname[0]:
-                img_temp = cv2.imread(fname[0], cv2.IMREAD_GRAYSCALE)
+                filename = np.fromfile(fname[0], np.uint8)
+                # img_temp = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+                img_temp = cv2.imdecode(filename, cv2.IMREAD_GRAYSCALE)
                 self.imagePanel.ip.feature_match(img_temp)
         else:
             QMessageBox.about(self.parent, 'Info', 'load image first')

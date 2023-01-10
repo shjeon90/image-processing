@@ -7,6 +7,7 @@ hello, world
 - opencv-python
 - PyQt5
 - qimage2ndarray
+- matplotlib
 ```
 
 Please, check that the computer you are using is whether M1 MacOS or not.
